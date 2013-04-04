@@ -6,8 +6,6 @@
 #include "ros/ros.h"
 #include "geometry_msgs/WrenchStamped.h"
 
-#include <sstream>
-
 using boost::asio::ip::tcp;
 
 static bool transformKMS2WrenchMsg(const char* i_line, geometry_msgs::WrenchStamped& o_msg)
@@ -30,9 +28,9 @@ static bool transformKMS2WrenchMsg(const char* i_line, geometry_msgs::WrenchStam
             ROS_WARN("Unrecognizable token: %s", i_line);
         }
     }
-    catch (std::exception e)
+    catch (std::exception& e)
     {
-        ROS_WARN("Error while parsing: %s", i_line);
+        ROS_WARN("Error (%s) while parsing: %s", e.what(), i_line);
         return false;
     }
 
@@ -113,16 +111,13 @@ int main(int argc, char **argv)
                 wrench_pub.publish(msg);
 
                 ros::spinOnce();
-
                 loop_rate.sleep();
-
             }
 
             // Tearing down data acquisition
             s << "L0()" << std::endl;
             ROS_INFO("Command for shutting down KMS40 has been send.");
         }
-
         catch (std::exception& e)
         {
             ROS_ERROR("Exception: %s", e.what());
