@@ -1,0 +1,18 @@
+<package>
+  <description brief="ipa325_kms40">
+
+     ipa325_kms40
+
+  </description>
+  <author>Lorenz</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/ipa325_kms40</url>
+  <depend package="geometry_msgs"/>
+  <depend package="std_msgs"/>
+  <depend package="rospy"/>
+  <depend package="roscpp"/>
+
+</package>
+
+
