@@ -4,6 +4,7 @@
 #include <boost/algorithm/string.hpp>
 
 #include "ros/ros.h"
+#include <tf/transform_broadcaster.h>
 #include "geometry_msgs/WrenchStamped.h"
 
 using boost::asio::ip::tcp;
@@ -26,6 +27,7 @@ static bool transformKMS2WrenchMsg(const char* i_line, geometry_msgs::WrenchStam
                    &o_msg.wrench.torque.z,
                    &timestamp);
 
+            o_msg.header.stamp = ros::Time::now();
             o_msg.header.frame_id = "kms40";
         }
         else
@@ -52,6 +54,10 @@ int main(int argc, char **argv)
     bool isDummy;
     double dummyValues[6] = {0};
 
+    std::string parentFrame;
+    tf::Vector3 translationParent2Sensor;// = {0};
+    tf::Quaternion rotationParent2Sensor;// = {0};
+
     if( !ros::param::get("~IP_address", ip) )
     {
         ROS_WARN("Cannot find IP_address @ paramServer, using default (192.168.1.30)");
@@ -71,29 +77,58 @@ int main(int argc, char **argv)
     }
     else
     {
-        XmlRpc::XmlRpcValue DummyValuesXmlRpc;
-        if( !ros::param::get("~dummyValues", DummyValuesXmlRpc) )
+        XmlRpc::XmlRpcValue dummyValuesXmlRpc;
+        if( !ros::param::get("~dummyValues", dummyValuesXmlRpc) )
         {
             ROS_WARN("Cannot find dummyValues @ paramServer, using default ([0, 0, 0, 0, 0, 0])");
         }
         else
         {
-            for (int i = 0; (i < DummyValuesXmlRpc.size()) && (i < 6); i++) {
-                dummyValues[i] = (double) DummyValuesXmlRpc[i];
+            for (int i = 0; (i < dummyValuesXmlRpc.size()) && (i < 6); i++) {
+                dummyValues[i] = (double) dummyValuesXmlRpc[i];
             }
         }
     }
+
+    if( !ros::param::get("~parentFrame", parentFrame) )
+    {
+        ROS_WARN("Cannot find parentframe @ parameterServer, using default (world)");
+        parentFrame = "world";
+    }
+
+    XmlRpc::XmlRpcValue transformationParent2SensorXmlRpc;
+    if( !ros::param::get("~transformParent2Sensor", transformationParent2SensorXmlRpc) )
+    {
+        ROS_WARN("Cannot find transformParent2Sensor @ paramServer, using default ([0, 0, 0, 0, 0, 0])");
+    }
+    else
+    {
+        double temp[6] = {0};
+        for (int i = 0; (i < transformationParent2SensorXmlRpc.size()) && (i < 6); i++) {
+            temp[i] = (double) transformationParent2SensorXmlRpc[i];
+        }
+
+        translationParent2Sensor = tf::Vector3(temp[0], temp[1], temp[2]);
+        rotationParent2Sensor.setEulerZYX(temp[3], temp[4], temp[5]);
+    }
+
+    tf::TransformBroadcaster tfBroadcaster;
+
+    tf::Transform transform;
+    transform.setOrigin(translationParent2Sensor);
+    transform.setRotation(rotationParent2Sensor);
+
+    tfBroadcaster.sendTransform(tf::StampedTransform(transform, ros::Time::now(), parentFrame, "kms40"));
 
     ros::NodeHandle n;
     ros::Publisher wrench_pub = n.advertise<geometry_msgs::WrenchStamped>("kms40", 1000);
     ros::Rate loop_rate(550); //500Hz + epsilon (ros::sleep may not be too precise)
 
-
     while (ros::ok())
     {
         if (isDummy)
         {
-            ROS_INFO("DummyMode is active, publishing static test values ...");
+            ROS_INFO_ONCE("DummyMode is active, publishing static test values ...");
 
             geometry_msgs::WrenchStamped msg;
             while(ros::ok())
@@ -114,7 +149,7 @@ int main(int argc, char **argv)
                 loop_rate.sleep();
             }
         }
-        else
+        else //harvest data from sensor
         {
             ROS_INFO("Trying to connect to KMS40 ...");
             try
