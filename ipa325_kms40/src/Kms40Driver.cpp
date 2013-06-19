@@ -118,8 +118,6 @@ int main(int argc, char **argv)
     transform.setOrigin(translationParent2Sensor);
     transform.setRotation(rotationParent2Sensor);
 
-    tfBroadcaster.sendTransform(tf::StampedTransform(transform, ros::Time::now(), parentFrame, "kms40"));
-
     ros::NodeHandle n;
     ros::Publisher wrench_pub = n.advertise<geometry_msgs::WrenchStamped>("kms40", 1000);
     ros::Rate loop_rate(550); //500Hz + epsilon (ros::sleep may not be too precise)
@@ -143,6 +141,7 @@ int main(int argc, char **argv)
                 msg.wrench.torque.y = dummyValues[4];
                 msg.wrench.torque.z = dummyValues[5];
 
+                tfBroadcaster.sendTransform(tf::StampedTransform(transform, ros::Time::now(), parentFrame, "kms40"));
                 wrench_pub.publish(msg);
 
                 ros::spinOnce();
@@ -189,12 +188,14 @@ int main(int argc, char **argv)
                     {
                         continue;
                     }
+
+                    tfBroadcaster.sendTransform(tf::StampedTransform(transform, ros::Time::now(), parentFrame, "kms40"));
                     /**
-                   * The publish() function is how you send messages. The parameter
-                   * is the message object. The type of this object must agree with the type
-                   * given as a template parameter to the advertise<>() call, as was done
-                   * in the constructor above.
-                   */
+                    * The publish() function is how you send messages. The parameter
+                    * is the message object. The type of this object must agree with the type
+                    * given as a template parameter to the advertise<>() call, as was done
+                    * in the constructor above.
+                    */
                     wrench_pub.publish(msg);
 
                     ros::spinOnce();
