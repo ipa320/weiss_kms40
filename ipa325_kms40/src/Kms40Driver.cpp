@@ -73,9 +73,10 @@ int main(int argc, char **argv)
     if( !ros::param::get("~dummyMode", isDummy) )
     {
         ROS_WARN("Cannot find dummyMode @ paramServer, using default (false)");
-        isDummy = false;
+        isDummy = true;
     }
-    else
+
+    if(isDummy)
     {
         XmlRpc::XmlRpcValue dummyValuesXmlRpc;
         if( !ros::param::get("~dummyValues", dummyValuesXmlRpc) )
@@ -132,7 +133,7 @@ int main(int argc, char **argv)
             while(ros::ok())
             {
                 msg.header.stamp = ros::Time::now();
-                msg.header.frame_id = "dummyFrame";
+                msg.header.frame_id = "kms40";
 
                 msg.wrench.force.x = dummyValues[0];
                 msg.wrench.force.y = dummyValues[1];
