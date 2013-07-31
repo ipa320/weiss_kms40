@@ -34,8 +34,13 @@ file(GLOB_RECURSE MYLAUNCH RELATIVE ${PROJECT_SOURCE_DIR} FOLLOW_SYMLINKS *.laun
 rosbuild_add_boost_directories()
 #Building RosExecutable
 rosbuild_add_executable(Kms40Driver src/Kms40Driver.cpp ${MYHEADERS} ${MYACTIONS} ${MYXML} ${MYLAUNCH} ${MYYAML} ${MYMSGS})
+
+rosbuild_add_executable(MarkerPublisher src/MarkerPublisher.cpp ${MYHEADERS} ${MYACTIONS} ${MYXML} ${MYLAUNCH} ${MYYAML} ${MYMSGS})
+
 #adding boost linking
 rosbuild_link_boost(Kms40Driver iostreams system)
+
+#rosbuild_link_boost(MarkerPublisher thread)
 
 #uncomment if you have defined messages
 #rosbuild_genmsg()
