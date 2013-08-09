@@ -34,7 +34,7 @@ file(GLOB_RECURSE MYLAUNCH RELATIVE ${PROJECT_SOURCE_DIR} FOLLOW_SYMLINKS *.laun
 rosbuild_add_boost_directories()
 #Building RosExecutable
 rosbuild_add_executable(Kms40Driver src/Kms40Driver.cpp ${MYHEADERS} ${MYACTIONS} ${MYXML} ${MYLAUNCH} ${MYYAML} ${MYMSGS})
-
+rosbuild_add_executable(Transform_Publisher src/Transform_Publisher.cpp ${MYHEADERS} ${MYACTIONS} ${MYXML} ${MYLAUNCH} ${MYYAML} ${MYMSGS})
 rosbuild_add_executable(MarkerPublisher src/MarkerPublisher.cpp ${MYHEADERS} ${MYACTIONS} ${MYXML} ${MYLAUNCH} ${MYYAML} ${MYMSGS})
 
 #adding boost linking
