@@ -4,7 +4,7 @@
 #include <boost/algorithm/string.hpp>
 
 #include "ros/ros.h"
-#include <tf/transform_broadcaster.h>
+//#include <tf/transform_broadcaster.h>
 #include <geometry_msgs/WrenchStamped.h>
 
 using boost::asio::ip::tcp;
@@ -28,7 +28,7 @@ static bool transformKMS2WrenchMsg(const char* i_line, geometry_msgs::WrenchStam
                    &timestamp);
 
             o_msg.header.stamp = ros::Time::now();
-            o_msg.header.frame_id = "kms40";
+            o_msg.header.frame_id = "/kms40";
         }
         else
         {
@@ -113,11 +113,11 @@ int main(int argc, char **argv)
         rotationParent2Sensor.setEulerZYX(temp[3], temp[4], temp[5]);
     }
 
-    tf::TransformBroadcaster tfBroadcaster;
+    //tf::TransformBroadcaster tfBroadcaster;
 
-    tf::Transform transform;
-    transform.setOrigin(translationParent2Sensor);
-    transform.setRotation(rotationParent2Sensor);
+    //tf::Transform transform;
+    //transform.setOrigin(translationParent2Sensor);
+    //transform.setRotation(rotationParent2Sensor);
 
     ros::NodeHandle n;
     ros::Publisher wrench_pub = n.advertise<geometry_msgs::WrenchStamped>("kms40", 1000);
@@ -133,7 +133,7 @@ int main(int argc, char **argv)
             while(ros::ok())
             {
                 msg.header.stamp = ros::Time::now();
-                msg.header.frame_id = "kms40";
+                msg.header.frame_id = "/kms40";
 
                 msg.wrench.force.x = dummyValues[0];
                 msg.wrench.force.y = dummyValues[1];
@@ -142,7 +142,7 @@ int main(int argc, char **argv)
                 msg.wrench.torque.y = dummyValues[4];
                 msg.wrench.torque.z = dummyValues[5];
 
-                tfBroadcaster.sendTransform(tf::StampedTransform(transform, ros::Time::now(), parentFrame, "/kms40"));
+                //tfBroadcaster.sendTransform(tf::StampedTransform(transform, ros::Time::now(), parentFrame, "/kms40"));
                 wrench_pub.publish(msg);
 
                 ros::spinOnce();
@@ -190,7 +190,7 @@ int main(int argc, char **argv)
                         continue;
                     }
 
-                    tfBroadcaster.sendTransform(tf::StampedTransform(transform, ros::Time::now(), parentFrame, "kms40"));
+                    //tfBroadcaster.sendTransform(tf::StampedTransform(transform, ros::Time::now(), parentFrame, "kms40"));
                     /**
                     * The publish() function is how you send messages. The parameter
                     * is the message object. The type of this object must agree with the type
