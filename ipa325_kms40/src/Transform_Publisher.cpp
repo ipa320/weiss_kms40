@@ -12,6 +12,10 @@
 void Callback( const geometry_msgs::WrenchStamped::ConstPtr& data)
 {
 
+   double length_vector[3] = {1 , 2 , 3} ;
+   float F[3]={0,0,0}, Fn[3] ;
+   tf::Matrix3x3 rot_matrix;
+
    F[0]= data -> wrench.force.x;
    F[1]= data -> wrench.force.y;
    F[2]= data -> wrench.force.z;
@@ -20,24 +24,24 @@ void Callback( const geometry_msgs::WrenchStamped::ConstPtr& data)
 
    ros::Rate rate(10.0);
 
-   while(node.ok())
-   {
-       tf::StampedTransform transform;
+   tf::StampedTransform transform;
 
-       try{
+   try{
 
-           listener.lookupTransform("/kms400","/new_frame",ros::Time(0),transform);
+       listener.lookupTransform("/kms400","/new_frame",ros::Time(0),transform);
        }
-       catch (tf::TransformException ex)
+   catch (tf::TransformException ex)
        {
 
-           ROS_ERROR("%s",ex.what());
+
+       ROS_ERROR("%s",ex.what());
+
 
        }
 
-       rot_matrix=transform.getBasis();
+   rot_matrix=transform.getBasis();
 
-   }
+
 
 
    for(int j=0;j<3;j++)
@@ -53,10 +57,18 @@ void Callback( const geometry_msgs::WrenchStamped::ConstPtr& data)
 
    }
 
-   cout<<"New Force Matrix"<<std::endl;
+   std::cout<<"New Force Matrix"<<std::endl;
    for(int j=0;j<3;j++)
    {
-       cout<<Fn[j]<<"/t";
+       std::cout<<Fn[j]<<"/t";
+   }
+
+
+   std::cout<<"New Moment"<<std::endl;
+   for(int j=0;j<3;j++)
+   {
+       std::cout<<Fn[j]*length_vector[j]<<"/t";
+
    }
 
 }
