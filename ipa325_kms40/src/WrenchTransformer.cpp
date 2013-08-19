@@ -16,6 +16,8 @@ protected:
     boost::shared_mutex _wrenchDataAccess;
 
     std::string _transFrameId;
+    tf::TransformListener _listener;
+
 
     void kms40Callback(const geometry_msgs::WrenchStampedConstPtr& data)
     {
@@ -26,71 +28,62 @@ protected:
         if (data->header.frame_id.compare(_transFrameId) != 0)
         {
 
+            tf::Matrix3x3 transRotMatrix, M_transMatrix;
 
-            tf::Matrix3x3 rot_matrix,trans_matrix;
+            tf::Vector3 transTranslation, F_measured, M_measured , F_target , M_target;
 
-            tf::Vector3 translation,Force_kms40, Moment_kms40 , F_tool , M_tool;
+            F_measured[0] = data->wrench.force.x;
+            F_measured[1] = data->wrench.force.y;
+            F_measured[2] = data->wrench.force.z;
 
-            Force_kms40[0]= data -> wrench.force.x;
-            Force_kms40[1]= data -> wrench.force.y;
-            Force_kms40[2]= data -> wrench.force.z;
+            M_measured[0] = data->wrench.torque.x;
+            M_measured[1] = data->wrench.torque.y;
+            M_measured[2] = data->wrench.torque.z;
 
-            Moment_kms40[0]= data ->wrench.torque.x;
-            Moment_kms40[1]= data ->wrench.torque.y;
-            Moment_kms40[2]= data ->wrench.torque.z;
-
-
-            tf::TransformListener listener;
 
             tf::StampedTransform transform;
             // Listen to kms40 to the tool frame
             try{
-                ros::Time now = ros::Time::now();
-             //   listener.waitForTransform(data->header.frame_id, _transFrameId, now, ros::Duration(0.5));
-                listener.lookupTransform(data->header.frame_id, _transFrameId, ros::Time(0), transform);
+//                _listener.waitForTransform(data->header.frame_id, _transFrameId, ros::Time(0), ros::Duration(0.1));
+                _listener.lookupTransform(_transFrameId, data->header.frame_id, ros::Time(0), transform);
             }
             catch (tf::TransformException ex)
             {
-
-
                 ROS_ERROR("%s",ex.what());
-
-
+                return;
             }
 
             // Finding the rotation Matrix from kms40 to tool_tcp
-            rot_matrix=transform.getBasis();
+            transRotMatrix = transform.getBasis();
 
             //Finding the translation vector from kms40 to tool_tcp
-            translation = transform.getOrigin()*rot_matrix;
+            transTranslation = transform.getOrigin();
+
             // Calculating the Force in the new tool_tcp
-            F_tool = Force_kms40*rot_matrix;
+            F_target = transRotMatrix * F_measured;
 
-            // Define the Tranlational matrix
 
-            trans_matrix[0][0]= 0;
-            trans_matrix[0][1]=-1*translation[2];
-            trans_matrix[0][2]= translation[1];
-            trans_matrix[1][0]= translation[2];
-            trans_matrix[1][1]= 0;
-            trans_matrix[1][2]=-1*translation[0];
-            trans_matrix[2][0]=-1*translation[1];
-            trans_matrix[2][1]= translation[0];
-            trans_matrix[2][2]= 0;
-
+            // Define the Omega matrix
+            M_transMatrix[0][0] = 0;
+            M_transMatrix[0][1] = -transTranslation[2];
+            M_transMatrix[0][2] = transTranslation[1];
+            M_transMatrix[1][0] = transTranslation[2];
+            M_transMatrix[1][1] = 0;
+            M_transMatrix[1][2] = -transTranslation[0];
+            M_transMatrix[2][0] = -transTranslation[1];
+            M_transMatrix[2][1] = transTranslation[0];
+            M_transMatrix[2][2] = 0;
 
             //Calculating the moment at the tool_tcp
 
-            M_tool =     Force_kms40*(trans_matrix*rot_matrix)+Moment_kms40*rot_matrix;
+            M_target = (M_transMatrix * transRotMatrix) * F_measured + transRotMatrix * M_measured;
 
-            transWrench.wrench.force.x = F_tool[0];
-            transWrench.wrench.force.y = F_tool[1];
-            transWrench.wrench.force.z = F_tool[2];
-            transWrench.wrench.torque.x = M_tool[0];
-            transWrench.wrench.torque.y = M_tool[1];
-            transWrench.wrench.torque.z = M_tool[2];
-
-
+            transWrench.wrench.force.x = F_target[0];
+            transWrench.wrench.force.y = F_target[1];
+            transWrench.wrench.force.z = F_target[2];
+            transWrench.wrench.torque.x = M_target[0];
+            transWrench.wrench.torque.y = M_target[1];
+            transWrench.wrench.torque.z = M_target[2];
 
         }
         else
@@ -120,21 +113,20 @@ protected:
 public:
     WrenchTransformer(std::string name)
     {
-        _wrenchPub = _nh.advertise<geometry_msgs::WrenchStamped>("/kms40_transformed", 1);
 
-        _wrenchSub = _nh.subscribe("/kms40", 1, &WrenchTransformer::kms40Callback, this);
+        _wrenchPub = _nh.advertise<geometry_msgs::WrenchStamped>("/kms40_transformed", 1000);
+        _wrenchSub = _nh.subscribe("/kms40", 1000, &WrenchTransformer::kms40Callback, this);
 
         if( !ros::param::get("~transformFrameId", _transFrameId) )
         {
             ROS_ERROR("Cannot find transformFrameId @ parameterServer");
-            _transFrameId = "transform";
-            //_nh.shutdown();
+            _transFrameId = "/tool_tcp";
         }
 
         double frequency = 500.0;
         if( !ros::param::get("~publishingRate", frequency) )
         {
-            ROS_ERROR("Cannot find publishingRate @ parameterServer, using default 50Hz");
+            ROS_ERROR("Cannot find publishingRate @ parameterServer, using default 500Hz");
         }
 
         ros::Rate r(frequency);
@@ -148,7 +140,7 @@ public:
             _wrenchPub.publish(wrench);
 
             ros::spinOnce();
-
+            r.sleep();
 
         }
 

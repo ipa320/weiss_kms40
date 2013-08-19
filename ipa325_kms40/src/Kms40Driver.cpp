@@ -28,7 +28,7 @@ static bool transformKMS2WrenchMsg(const char* i_line, geometry_msgs::WrenchStam
                    &timestamp);
 
             o_msg.header.stamp = ros::Time::now();
-            o_msg.header.frame_id = "kms40";
+            o_msg.header.frame_id = "/kms40";
         }
         else
         {
@@ -55,8 +55,6 @@ int main(int argc, char **argv)
     double dummyValues[6] = {0};
 
     std::string parentFrame;
-    tf::Vector3 translationParent2Sensor;// = {0};
-    tf::Quaternion rotationParent2Sensor;// = {0};
 
     if( !ros::param::get("~IP_address", ip) )
     {
@@ -97,27 +95,6 @@ int main(int argc, char **argv)
         parentFrame = "world";
     }
 
-    XmlRpc::XmlRpcValue transformationParent2SensorXmlRpc;
-    if( !ros::param::get("~transformParent2Sensor", transformationParent2SensorXmlRpc) )
-    {
-        ROS_WARN("Cannot find transformParent2Sensor @ paramServer, using default ([0, 0, 0, 0, 0, 0])");
-    }
-    else
-    {
-        double temp[6] = {0};
-        for (int i = 0; (i < transformationParent2SensorXmlRpc.size()) && (i < 6); i++) {
-            temp[i] = (double) transformationParent2SensorXmlRpc[i];
-        }
-
-        translationParent2Sensor = tf::Vector3(temp[0], temp[1], temp[2]);
-        rotationParent2Sensor.setEulerZYX(temp[3], temp[4], temp[5]);
-    }
-
-    tf::TransformBroadcaster tfBroadcaster;
-
-    tf::Transform transform;
-    transform.setOrigin(translationParent2Sensor);
-    transform.setRotation(rotationParent2Sensor);
 
     ros::NodeHandle n;
     ros::Publisher wrench_pub = n.advertise<geometry_msgs::WrenchStamped>("kms40", 1000);
@@ -133,7 +110,7 @@ int main(int argc, char **argv)
             while(ros::ok())
             {
                 msg.header.stamp = ros::Time::now();
-                msg.header.frame_id = "kms40";
+                msg.header.frame_id = parentFrame;
 
                 msg.wrench.force.x = dummyValues[0];
                 msg.wrench.force.y = dummyValues[1];
@@ -159,7 +136,7 @@ int main(int argc, char **argv)
                 if (!s)
                 {
                     ROS_WARN("Connection failed, retry in 5 seconds...");
-                    ros::Duration(5, 0).sleep();
+                    ros::Duration(1, 0).sleep();
                     continue;
                 }
                 ROS_INFO("Connection established");
@@ -190,13 +167,8 @@ int main(int argc, char **argv)
                         continue;
                     }
 
-                    //fBroadcaster.sendTransform(tf::StampedTransform(transform, ros::Time::now(), parentFrame, "kms40"));
-                    /**
-                    * The publish() function is how you send messages. The parameter
-                    * is the message object. The type of this object must agree with the type
-                    * given as a template parameter to the advertise<>() call, as was done
-                    * in the constructor above.
-                    */
+                    msg.header.frame_id = parentFrame;
+
                     wrench_pub.publish(msg);
 
                     ros::spinOnce();

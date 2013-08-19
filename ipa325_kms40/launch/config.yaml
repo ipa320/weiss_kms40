@@ -2,5 +2,5 @@ IP_address: "192.168.1.30"
 port: "1000"
 dummyMode: false
 
-parentFrame: "/ee_link"
-transformParent2Sensor: [0.08, 0.0, 0.0, 0.0, 0.0, 0.0]
+parentFrame: "/kms40"
+
