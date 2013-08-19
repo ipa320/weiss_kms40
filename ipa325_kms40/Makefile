@@ -187,6 +187,19 @@ Transform_Publisher/fast:
 .PHONY : Transform_Publisher/fast
 
 #=============================================================================
+# Target rules for targets named WrenchTransformer
+
+# Build rule for target.
+WrenchTransformer: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 WrenchTransformer
+.PHONY : WrenchTransformer
+
+# fast build rule for target.
+WrenchTransformer/fast:
+	$(MAKE) -f CMakeFiles/WrenchTransformer.dir/build.make CMakeFiles/WrenchTransformer.dir/build
+.PHONY : WrenchTransformer/fast
+
+#=============================================================================
 # Target rules for targets named clean-test-results
 
 # Build rule for target.
@@ -374,6 +387,21 @@ src/Transform_Publisher.s:
 	$(MAKE) -f CMakeFiles/Transform_Publisher.dir/build.make CMakeFiles/Transform_Publisher.dir/src/Transform_Publisher.s
 .PHONY : src/Transform_Publisher.s
 
+# target to build an object file
+src/WrenchTransformer.o:
+	$(MAKE) -f CMakeFiles/WrenchTransformer.dir/build.make CMakeFiles/WrenchTransformer.dir/src/WrenchTransformer.o
+.PHONY : src/WrenchTransformer.o
+
+# target to preprocess a source file
+src/WrenchTransformer.i:
+	$(MAKE) -f CMakeFiles/WrenchTransformer.dir/build.make CMakeFiles/WrenchTransformer.dir/src/WrenchTransformer.i
+.PHONY : src/WrenchTransformer.i
+
+# target to generate assembly for a file
+src/WrenchTransformer.s:
+	$(MAKE) -f CMakeFiles/WrenchTransformer.dir/build.make CMakeFiles/WrenchTransformer.dir/src/WrenchTransformer.s
+.PHONY : src/WrenchTransformer.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -387,6 +415,7 @@ help:
 	@echo "... ROSBUILD_gensrv_cpp"
 	@echo "... ROSBUILD_gensrv_lisp"
 	@echo "... Transform_Publisher"
+	@echo "... WrenchTransformer"
 	@echo "... clean-test-results"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
@@ -409,6 +438,9 @@ help:
 	@echo "... src/Transform_Publisher.o"
 	@echo "... src/Transform_Publisher.i"
 	@echo "... src/Transform_Publisher.s"
+	@echo "... src/WrenchTransformer.o"
+	@echo "... src/WrenchTransformer.i"
+	@echo "... src/WrenchTransformer.s"
 .PHONY : help
 
 

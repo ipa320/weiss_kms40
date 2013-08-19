@@ -142,7 +142,7 @@ int main(int argc, char **argv)
                 msg.wrench.torque.y = dummyValues[4];
                 msg.wrench.torque.z = dummyValues[5];
 
-                tfBroadcaster.sendTransform(tf::StampedTransform(transform, ros::Time::now(), parentFrame, "kms40"));
+                //tfBroadcaster.sendTransform(tf::StampedTransform(transform, ros::Time::now(), parentFrame, "kms40"));
                 wrench_pub.publish(msg);
 
                 ros::spinOnce();
@@ -190,7 +190,7 @@ int main(int argc, char **argv)
                         continue;
                     }
 
-                    tfBroadcaster.sendTransform(tf::StampedTransform(transform, ros::Time::now(), parentFrame, "kms40"));
+                    //fBroadcaster.sendTransform(tf::StampedTransform(transform, ros::Time::now(), parentFrame, "kms40"));
                     /**
                     * The publish() function is how you send messages. The parameter
                     * is the message object. The type of this object must agree with the type

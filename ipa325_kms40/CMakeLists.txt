@@ -37,6 +37,8 @@ rosbuild_add_executable(Kms40Driver src/Kms40Driver.cpp ${MYHEADERS} ${MYACTIONS
 rosbuild_add_executable(Transform_Publisher src/Transform_Publisher.cpp ${MYHEADERS} ${MYACTIONS} ${MYXML} ${MYLAUNCH} ${MYYAML} ${MYMSGS})
 rosbuild_add_executable(MarkerPublisher src/MarkerPublisher.cpp ${MYHEADERS} ${MYACTIONS} ${MYXML} ${MYLAUNCH} ${MYYAML} ${MYMSGS})
 
+rosbuild_add_executable(WrenchTransformer src/WrenchTransformer.cpp ${MYHEADERS} ${MYACTIONS} ${MYXML} ${MYLAUNCH} ${MYYAML} ${MYMSGS})
+
 #adding boost linking
 rosbuild_link_boost(Kms40Driver iostreams system)
 
