@@ -15,15 +15,15 @@ protected:
     geometry_msgs::WrenchStamped _transWrench;
     boost::shared_mutex _wrenchDataAccess;
 
-    std::string transFrameId;
+    std::string _transFrameId;
 
     void kms40Callback(const geometry_msgs::WrenchStampedConstPtr& data)
     {
         geometry_msgs::WrenchStamped transWrench;
         transWrench.header.stamp = data->header.stamp;
-        transWrench.header.frame_id = transFrameId;
+        transWrench.header.frame_id = _transFrameId;
 
-        if (data->header.frame_id.compare(transFrameId) != 0)
+        if (data->header.frame_id.compare(_transFrameId) != 0)
         {
 
 
@@ -35,30 +35,29 @@ protected:
             Force_kms40[1]= data -> wrench.force.y;
             Force_kms40[2]= data -> wrench.force.z;
 
-             Moment_kms40[0]= data ->wrench.torque.x;
-             Moment_kms40[1]= data ->wrench.torque.y;
-             Moment_kms40[2]= data ->wrench.torque.z;
+            Moment_kms40[0]= data ->wrench.torque.x;
+            Moment_kms40[1]= data ->wrench.torque.y;
+            Moment_kms40[2]= data ->wrench.torque.z;
 
 
             tf::TransformListener listener;
 
-            ros::Rate rate(20.0);
-
             tf::StampedTransform transform;
-             // Listen to kms40 to the tool frame
+            // Listen to kms40 to the tool frame
             try{
                 ros::Time now = ros::Time::now();
-                listener.waitForTransform("/upper_arm_link","/forearm_link", now, ros::Duration(2.0));
-                listener.lookupTransform("/upper_arm_link","/forearm_link",ros::Time(0),transform);
-                }
+                listener.waitForTransform(data->header.frame_id, _transFrameId, now, ros::Duration(0.5));
+                listener.lookupTransform(data->header.frame_id, _transFrameId, ros::Time(0), transform);
+            }
             catch (tf::TransformException ex)
-                {
+            {
 
 
                 ROS_ERROR("%s",ex.what());
 
 
-                }
+            }
+
             // Finding the rotation Matrix from kms40 to tool_tcp
             rot_matrix=transform.getBasis();
 
@@ -69,18 +68,18 @@ protected:
 
             // Define the Tranlational matrix
 
-                   trans_matrix[0][0]= 0;
-                   trans_matrix[0][1]=-1*translation[2];
-                   trans_matrix[0][2]= translation[1];
-                   trans_matrix[1][0]= translation[2];
-                   trans_matrix[1][1]= 0;
-                   trans_matrix[1][2]=-1*translation[0];
-                   trans_matrix[2][0]=-1*translation[1];
-                   trans_matrix[2][1]= translation[0];
-                   trans_matrix[2][2]= 0;
+            trans_matrix[0][0]= 0;
+            trans_matrix[0][1]=-1*translation[2];
+            trans_matrix[0][2]= translation[1];
+            trans_matrix[1][0]= translation[2];
+            trans_matrix[1][1]= 0;
+            trans_matrix[1][2]=-1*translation[0];
+            trans_matrix[2][0]=-1*translation[1];
+            trans_matrix[2][1]= translation[0];
+            trans_matrix[2][2]= 0;
 
 
-             //Calculating the moment at the tool_tcp
+            //Calculating the moment at the tool_tcp
 
             M_tool =     Force_kms40*(trans_matrix*rot_matrix)+Moment_kms40*rot_matrix;
 
@@ -123,12 +122,12 @@ public:
     {
         _wrenchPub = _nh.advertise<geometry_msgs::WrenchStamped>("/kms40_transformed", 1);
 
-        _wrenchSub = _nh.subscribe("/kms40", 1, &WrenchTransformer::kms40Callback, this);
+        _wrenchSub = _nh.subscribe("/kms40", 1000, &WrenchTransformer::kms40Callback, this);
 
-        if( !ros::param::get("~transformFrameId", transFrameId) )
+        if( !ros::param::get("~transformFrameId", _transFrameId) )
         {
             ROS_ERROR("Cannot find transformFrameId @ parameterServer");
-            transFrameId = "transform";
+            _transFrameId = "transform";
             //_nh.shutdown();
         }
 
@@ -163,7 +162,7 @@ int main( int argc, char** argv )
 {
     ros::init(argc, argv, "WrenchTransformer");
 
-//    ROS_ERROR("Node not working as hoped. Math failed");
+    //    ROS_ERROR("Node not working as hoped. Math failed");
     WrenchTransformer wrenchTransformer(ros::this_node::getName());
 
     return 0;
