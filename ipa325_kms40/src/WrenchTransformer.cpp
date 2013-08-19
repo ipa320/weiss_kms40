@@ -46,7 +46,7 @@ protected:
             // Listen to kms40 to the tool frame
             try{
                 ros::Time now = ros::Time::now();
-                listener.waitForTransform(data->header.frame_id, _transFrameId, now, ros::Duration(0.5));
+             //   listener.waitForTransform(data->header.frame_id, _transFrameId, now, ros::Duration(0.5));
                 listener.lookupTransform(data->header.frame_id, _transFrameId, ros::Time(0), transform);
             }
             catch (tf::TransformException ex)
@@ -122,7 +122,7 @@ public:
     {
         _wrenchPub = _nh.advertise<geometry_msgs::WrenchStamped>("/kms40_transformed", 1);
 
-        _wrenchSub = _nh.subscribe("/kms40", 1000, &WrenchTransformer::kms40Callback, this);
+        _wrenchSub = _nh.subscribe("/kms40", 1, &WrenchTransformer::kms40Callback, this);
 
         if( !ros::param::get("~transformFrameId", _transFrameId) )
         {

@@ -4,3 +4,7 @@ syntax: glob
 build
 msg_gen
 bin
+CMakeFiles
+catkin_generated
+devel
+*~

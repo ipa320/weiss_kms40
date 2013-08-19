@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+	<node pkg="ipa325_kms40" type="WrenchTransformer" name="wrenchTransformer" output="screen" cwd="node">
+		<rosparam command="load" file="$(find ipa325_kms40)/launch/transformer_config.yaml"/>
+	</node>
+</launch>
+
+
