@@ -1,6 +1,6 @@
 IP_address: "192.168.1.30"
 port: "1000"
 dummyMode: true
-dummyValues: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+dummyValues: [0.0, 0.0, 0.0, 1.0, 0.0, 0.0]
 parentFrame: "/ee_link"
 transformParent2Sensor: [0.095, 0.0, 0.0, 0.0, 0.0, 0.0]

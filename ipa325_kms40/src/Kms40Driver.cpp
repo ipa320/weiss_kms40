@@ -55,8 +55,8 @@ int main(int argc, char **argv)
     double dummyValues[6] = {0};
 
     std::string parentFrame;
-    tf::Vector3 translationParent2Sensor;// = {0};
-    tf::Quaternion rotationParent2Sensor;// = {0};
+//    tf::Vector3 translationParent2Sensor;// = {0};
+//    tf::Quaternion rotationParent2Sensor;// = {0};
 
     if( !ros::param::get("~IP_address", ip) )
     {
@@ -94,7 +94,7 @@ int main(int argc, char **argv)
     if( !ros::param::get("~parentFrame", parentFrame) )
     {
         ROS_WARN("Cannot find parentframe @ parameterServer, using default (world)");
-        parentFrame = "world";
+        parentFrame = "/world";
     }
 
     XmlRpc::XmlRpcValue transformationParent2SensorXmlRpc;
@@ -109,8 +109,8 @@ int main(int argc, char **argv)
             temp[i] = (double) transformationParent2SensorXmlRpc[i];
         }
 
-        translationParent2Sensor = tf::Vector3(temp[0], temp[1], temp[2]);
-        rotationParent2Sensor.setEulerZYX(temp[3], temp[4], temp[5]);
+//        translationParent2Sensor = tf::Vector3(temp[0], temp[1], temp[2]);
+//        rotationParent2Sensor.setEulerZYX(temp[3], temp[4], temp[5]);
     }
 
     //tf::TransformBroadcaster tfBroadcaster;
