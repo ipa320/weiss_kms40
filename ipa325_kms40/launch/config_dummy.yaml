@@ -1,5 +1,5 @@
 IP_address: "192.168.1.30"
 port: "1000"
 dummyMode: true
-dummyValues: [0.0, 1.0, 0.0, 0.0, 0.0, 0.0]
+dummyValues: [3.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 parentFrame: "/kms40"
