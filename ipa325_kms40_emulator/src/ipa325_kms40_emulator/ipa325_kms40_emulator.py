@@ -7,6 +7,99 @@ from python_qt_binding.QtGui import QWidget
 
 from PyQt4 import QtGui, QtCore
 
+from geometry_msgs.msg import Wrench, WrenchStamped
+
+import threading 
+ 
+class PublisherThread(threading.Thread):
+    _lock = threading.Lock()
+    _isRunning = False
+    _isEnd = False
+    _wrench = Wrench()
+    _rate = rospy.Rate(500) # 500hz
+    _topic = "/kms40"
+    _frameId = "/kms40Frame"
+
+    def __init__(self): 
+        threading.Thread.__init__(self) 
+
+    def run(self):
+        while not self._isEnd:
+            if self._isRunning:
+                self.pub = rospy.Publisher(self._topic, WrenchStamped)
+                while self._isRunning:
+                    msg = WrenchStamped()
+                    msg.header.stamp = rospy.Time.now()
+                    self._lock.acquire() 
+                    msg.wrench = self._wrench
+                    msg.header.frame_id = self._frameId
+                    self._lock.release() 
+                    self.pub.publish(msg)
+                    self._rate.sleep()
+            rospy.sleep(0.1)
+        print "Thread ended"
+
+    def stop(self):
+        self._isRunning = False
+
+    def restart(self):
+        self._isRunning = True
+
+    def end(self):
+        self._isEnd = True
+        self._isRunning = False
+        print "Thread ending"
+
+    def setWrenchFX(self, x):
+        self._lock.acquire()
+        self._wrench.force.x = x
+        self._lock.release()
+        print self._wrench
+
+    def setWrenchFY(self, y):
+        self._lock.acquire()
+        self._wrench.force.y = y
+        self._lock.release()
+        print self._wrench
+
+    def setWrenchFZ(self, z):
+        self._lock.acquire()
+        self._wrench.force.z = z
+        self._lock.release()
+        print self._wrench
+
+    def setWrenchTX(self, x):
+        self._lock.acquire()
+        self._wrench.torque.x = x
+        self._lock.release()
+        print self._wrench
+
+    def setWrenchTY(self, y):
+        self._lock.acquire()
+        self._wrench.torque.y = y
+        self._lock.release()
+        print self._wrench
+    
+    def setWrenchTZ(self, z):
+        self._lock.acquire()
+        self._wrench.torque.z  = z
+        self._lock.release()
+        print self._wrench
+
+    def getWrench(self):
+        return self._wrench
+
+    def setRate(self, rate):
+        self._rate = rospy.Rate(rate)
+
+    def setTopic(self, topic):
+        self._topic = topic
+
+    def setFrameId(self, frameId):
+        self._lock.acquire()
+        self._frameId = frameId
+        self._lock.release()
+
 class kms40_emulator_plugin(Plugin):
 
     def __init__(self, context):
@@ -56,6 +149,8 @@ class kms40_emulator_plugin(Plugin):
         self.connect(self._widget.horizontalSlider_forceB, QtCore.SIGNAL("valueChanged(int)"), self._handle_sliderB_changed)
         self.connect(self._widget.horizontalSlider_forceC, QtCore.SIGNAL("valueChanged(int)"), self._handle_sliderC_changed)
 
+        self.connect(self._widget.lineEdit_topic, QtCore.SIGNAL("textChanged (QString)"), self._handle_topic_changed)
+        self.connect(self._widget.lineEdit_frameId, QtCore.SIGNAL("textChanged (QString)"), self._handle_frameId_changed)
 
         # Show _widget.windowTitle on left-top of each plugin (when 
         # it's set in _widget). This is useful when you open multiple 
@@ -66,9 +161,17 @@ class kms40_emulator_plugin(Plugin):
             self._widget.setWindowTitle(self._widget.windowTitle() + (' (%d)' % context.serial_number()))
         # Add widget to the user interface
         context.add_widget(self._widget)
+        
+        # PublisherThread
+        self.t = PublisherThread()
+        self.t.start()
+        self.updateWidgets()
 
     def shutdown_plugin(self):
+        self.t.end()
+        self.t.join()
         # TODO unregister all publishers here
+
         pass
 
     def save_settings(self, plugin_settings, instance_settings):
@@ -86,51 +189,103 @@ class kms40_emulator_plugin(Plugin):
         # This will enable a setting button (gear icon) in each dock widget title bar
         # Usually used to open a modal configuration dialog
 
+
     def _handle_run_clicked(self):
         print "run now"
+        self.t.restart()
 
 
     def _handle_stop_clicked(self):
         print "stop now"
+        self.t.stop()
 
 
     def _handle_rate_changed(self, val):
-        print "handle_rate_changed", int(val)
+        #print "handle_rate_changed", int(val)
+        self.t.setRate(val)
 
     #spinBoxes
     def _handle_forceX_changed(self, val):
-        print "_handle_forceX_changed", val
+        #print "_handle_forceX_changed", val
+        self.t.setWrenchFX(val)
+        self.updateWidgets()
 
     def _handle_forceY_changed(self, val):
-        print "_handle_forceY_changed", val
+        #print "_handle_forceY_changed", val
+        self.t.setWrenchFY(val)
+        self.updateWidgets()
 
     def _handle_forceZ_changed(self, val):
-        print "_handle_forceZ_changed", val
+        #print "_handle_forceZ_changed", val
+        self.t.setWrenchFZ(val)
+        self.updateWidgets()
 
     def _handle_forceA_changed(self, val):
-        print "_handle_forceA_changed", val
+        #print "_handle_forceA_changed", val
+        self.t.setWrenchTZ(val)
+        self.updateWidgets()
 
     def _handle_forceB_changed(self, val):
-        print "_handle_forceB_changed", val
+        #print "_handle_forceB_changed", val
+        self.t.setWrenchTY(val)
+        self.updateWidgets()
 
     def _handle_forceC_changed(self, val):
-        print "_handle_forceC_changed", val
+        #print "_handle_forceC_changed", val
+        self.t.setWrenchTX(val)
+        self.updateWidgets()
 
     # sliders
     def _handle_sliderX_changed(self, val):
-        print "_handle_sliderX_changed", val
+        #print "_handle_sliderX_changed", val
+        self.t.setWrenchFX(val)
+        self.updateWidgets()
 
     def _handle_sliderY_changed(self, val):
-        print "_handle_sliderY_changed", val
+        #print "_handle_sliderY_changed", val
+        self.t.setWrenchFY(val)
+        self.updateWidgets()
 
     def _handle_sliderZ_changed(self, val):
-        print "_handle_sliderZ_changed", val
+        #print "_handle_sliderZ_changed", val
+        self.t.setWrenchFZ(val)
+        self.updateWidgets()
 
     def _handle_sliderA_changed(self, val):
-        print "_handle_sliderA_changed", val
+        #print "_handle_sliderA_changed", val
+        self.t.setWrenchTZ(val)
+        self.updateWidgets()
 
     def _handle_sliderB_changed(self, val):
-        print "_handle_sliderB_changed", val
+        #print "_handle_sliderB_changed", val
+        self.t.setWrenchTY(val)
+        self.updateWidgets()
 
     def _handle_sliderC_changed(self, val):
-        print "_handle_sliderC_changed", val
+        #print "_handle_sliderC_changed", val
+        self.t.setWrenchTX(val)
+        self.updateWidgets()
+
+    def _handle_frameId_changed(self, val):
+        #print "_handle_topic_changed", val#self._widget.lineEdit_topic.toPlainText()
+        self.t.setFrameId(val)
+
+    def _handle_topic_changed(self, val):
+        #print "_handle_topic_changed", val#self._widget.lineEdit_topic.toPlainText()
+        self.t.setTopic(val)
+
+    def updateWidgets(self):
+        wrench = self.t.getWrench()
+        self._widget.doubleSpinBox_forceX.setValue(wrench.force.x)
+        self._widget.doubleSpinBox_forceY.setValue(wrench.force.y)
+        self._widget.doubleSpinBox_forceZ.setValue(wrench.force.z)
+        self._widget.doubleSpinBox_forceA.setValue(wrench.torque.z)
+        self._widget.doubleSpinBox_forceB.setValue(wrench.torque.y)
+        self._widget.doubleSpinBox_forceC.setValue(wrench.torque.x)
+
+        self._widget.horizontalSlider_forceX.setValue(wrench.force.x)
+        self._widget.horizontalSlider_forceY.setValue(wrench.force.y)
+        self._widget.horizontalSlider_forceZ.setValue(wrench.force.z)
+        self._widget.horizontalSlider_forceA.setValue(wrench.torque.z)
+        self._widget.horizontalSlider_forceB.setValue(wrench.torque.y)
+        self._widget.horizontalSlider_forceC.setValue(wrench.torque.x)
