@@ -1,0 +1,5 @@
+subscribeTopic: "/ft_sensor/ft_compensated"
+publishTopic: "/ee_force"
+transformFrameId: "/ee_link"
+publishingRate: 500.0
+

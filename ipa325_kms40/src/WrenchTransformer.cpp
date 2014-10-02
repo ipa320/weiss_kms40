@@ -16,6 +16,8 @@ protected:
     boost::shared_mutex _wrenchDataAccess;
 
     std::string _transFrameId;
+    std::string _subTopic;
+    std::string _pubTopic;
     tf::TransformListener _listener;
 
 
@@ -114,13 +116,22 @@ public:
     WrenchTransformer(std::string name)
     {
 
-        _wrenchPub = _nh.advertise<geometry_msgs::WrenchStamped>("/kms40_transformed", 1000);
-        _wrenchSub = _nh.subscribe("/kms40", 1000, &WrenchTransformer::kms40Callback, this);
-
         if( !ros::param::get("~transformFrameId", _transFrameId) )
         {
             ROS_ERROR("Cannot find transformFrameId @ parameterServer");
-            _transFrameId = "/tool_tcp";
+            return;
+        }
+
+        if( !ros::param::get("~subscribeTopic", _subTopic) )
+        {
+            ROS_ERROR("Cannot find subscribeTopic @ parameterServer");
+            return;
+        }
+
+        if( !ros::param::get("~publishTopic", _pubTopic) )
+        {
+            ROS_ERROR("Cannot find publishTopic @ parameterServer");
+            return;
         }
 
         double frequency = 500.0;
@@ -130,6 +141,9 @@ public:
         }
 
         ros::Rate r(frequency);
+
+        _wrenchPub = _nh.advertise<geometry_msgs::WrenchStamped>(_pubTopic, 1000);
+        _wrenchSub = _nh.subscribe(_subTopic, 1000, &WrenchTransformer::kms40Callback, this);
 
         geometry_msgs::WrenchStamped wrench;
 
