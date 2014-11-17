@@ -50,7 +50,7 @@ int main(int argc, char **argv)
 
     ros::init(argc, argv, "kms40");
 
-    std::string ip, port;
+    std::string ip, port, topic;
     bool isDummy;
     double dummyValues[6] = {0};
 
@@ -70,7 +70,7 @@ int main(int argc, char **argv)
 
     if( !ros::param::get("~dummyMode", isDummy) )
     {
-        ROS_WARN("Cannot find dummyMode @ paramServer, using default (false)");
+        ROS_WARN("Cannot find dummyMode @ paramServer, using default (true)");
         isDummy = true;
     }
 
@@ -94,10 +94,15 @@ int main(int argc, char **argv)
         ROS_WARN("Cannot find parentframe @ parameterServer, using default (world)");
         parentFrame = "world";
     }
-
+    
+    if( !ros::param::get("~topic", topic) )
+    {
+        ROS_WARN("Cannot find topic @ parameterServer, using default (/kms40)");
+        topic = "kms40";
+    }
 
     ros::NodeHandle n;
-    ros::Publisher wrench_pub = n.advertise<geometry_msgs::WrenchStamped>("kms40", 1000);
+    ros::Publisher wrench_pub = n.advertise<geometry_msgs::WrenchStamped>(topic, 1000);
     ros::Rate loop_rate(550); //500Hz + epsilon (ros::sleep may not be too precise)
 
     while (ros::ok())
