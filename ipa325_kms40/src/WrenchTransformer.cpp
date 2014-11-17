@@ -19,7 +19,7 @@ protected:
     std::string _subTopic;
     std::string _pubTopic;
     tf::TransformListener _listener;
-
+    double _offset[6];
 
     void kms40Callback(const geometry_msgs::WrenchStampedConstPtr& data)
     {
@@ -98,6 +98,14 @@ protected:
 
         // get exclusive access
         boost::upgrade_to_unique_lock<boost::shared_mutex> uniqueLock(lock);
+        
+        // lth todo
+        transWrench.wrench.force.x -= _offset[0];
+        transWrench.wrench.force.y -= _offset[1];
+        transWrench.wrench.force.z -= _offset[2];
+        transWrench.wrench.torque.x -= _offset[3];
+        transWrench.wrench.torque.y -= _offset[4];
+        transWrench.wrench.torque.z -= _offset[5];
 
         _transWrench = transWrench;
 
@@ -139,6 +147,15 @@ public:
         {
             ROS_ERROR("Cannot find publishingRate @ parameterServer, using default 500Hz");
         }
+
+        // LTH TODO: Get from (dynamic) parameter
+        if( !ros::param::get("~offset/Fx", _offset[0]) ) { _offset[0]= 0.0f; };
+        if( !ros::param::get("~offset/Fy", _offset[1]) ) { _offset[1]= 0.0f; };
+        if( !ros::param::get("~offset/Fz", _offset[2]) ) { _offset[2]= 0.0f; };
+        if( !ros::param::get("~offset/Mx", _offset[3]) ) { _offset[3]= 0.0f; };
+        if( !ros::param::get("~offset/My", _offset[4]) ) { _offset[4]= 0.0f; };
+        if( !ros::param::get("~offset/Mz", _offset[5]) ) { _offset[5]= 0.0f; };
+        //_offset = 3.0f;
 
         ros::Rate r(frequency);
 
