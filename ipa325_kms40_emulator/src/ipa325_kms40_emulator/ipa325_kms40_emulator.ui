@@ -159,6 +159,9 @@
            <layout class="QHBoxLayout" name="horizontalLayout">
             <item>
              <widget class="QDoubleSpinBox" name="doubleSpinBox_forceX">
+              <property name="autoFillBackground">
+               <bool>false</bool>
+              </property>
               <property name="minimum">
                <double>-1000.000000000000000</double>
               </property>
@@ -173,10 +176,10 @@
             <item>
              <widget class="QSlider" name="horizontalSlider_forceX">
               <property name="minimum">
-               <number>-1000</number>
+               <number>-50</number>
               </property>
               <property name="maximum">
-               <number>1000</number>
+               <number>50</number>
               </property>
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
@@ -218,10 +221,10 @@
             <item>
              <widget class="QSlider" name="horizontalSlider_forceY">
               <property name="minimum">
-               <number>-1000</number>
+               <number>-50</number>
               </property>
               <property name="maximum">
-               <number>1000</number>
+               <number>50</number>
               </property>
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
@@ -263,10 +266,10 @@
             <item>
              <widget class="QSlider" name="horizontalSlider_forceZ">
               <property name="minimum">
-               <number>-1000</number>
+               <number>-50</number>
               </property>
               <property name="maximum">
-               <number>1000</number>
+               <number>50</number>
               </property>
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
@@ -308,10 +311,10 @@
             <item>
              <widget class="QSlider" name="horizontalSlider_forceC">
               <property name="minimum">
-               <number>-1000</number>
+               <number>-50</number>
               </property>
               <property name="maximum">
-               <number>1000</number>
+               <number>50</number>
               </property>
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
@@ -353,10 +356,10 @@
             <item>
              <widget class="QSlider" name="horizontalSlider_forceB">
               <property name="minimum">
-               <number>-1000</number>
+               <number>-50</number>
               </property>
               <property name="maximum">
-               <number>1000</number>
+               <number>50</number>
               </property>
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
@@ -398,10 +401,10 @@
             <item>
              <widget class="QSlider" name="horizontalSlider_forceA">
               <property name="minimum">
-               <number>-1000</number>
+               <number>-50</number>
               </property>
               <property name="maximum">
-               <number>1000</number>
+               <number>50</number>
               </property>
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
