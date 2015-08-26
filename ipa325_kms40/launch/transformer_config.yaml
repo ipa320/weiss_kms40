@@ -1,5 +1,0 @@
-subscribeTopic: "/kms40"
-publishTopic: "/transformed_kms40"
-transformFrameId: "/test_frame"
-publishingRate: 500.0
-

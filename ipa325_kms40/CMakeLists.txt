@@ -74,7 +74,6 @@ include_directories(
 
 ## Declare a cpp executable
 add_executable(Kms40Driver src/Kms40Driver.cpp)
-add_executable(WrenchTransformer src/WrenchTransformer.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
@@ -82,11 +81,6 @@ add_executable(WrenchTransformer src/WrenchTransformer.cpp)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(Kms40Driver
-  ${catkin_LIBRARIES}
-  ${Boost_LIBRARIES}
-)
-
-target_link_libraries(WrenchTransformer
   ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}
 )
