@@ -68,26 +68,6 @@ int main(int argc, char **argv)
         port = "1000";
     }
 
-    if( !ros::param::get("~dummyMode", isDummy) )
-    {
-        ROS_WARN("Cannot find dummyMode @ paramServer, using default (true)");
-        isDummy = true;
-    }
-
-    if(isDummy)
-    {
-        XmlRpc::XmlRpcValue dummyValuesXmlRpc;
-        if( !ros::param::get("~dummyValues", dummyValuesXmlRpc) )
-        {
-            ROS_WARN("Cannot find dummyValues @ paramServer, using default ([0, 0, 0, 0, 0, 0])");
-        }
-        else
-        {
-            for (int i = 0; (i < dummyValuesXmlRpc.size()) && (i < 6); i++) {
-                dummyValues[i] = (double) dummyValuesXmlRpc[i];
-            }
-        }
-    }
 
     if( !ros::param::get("~parentFrame", parentFrame) )
     {
@@ -107,88 +87,63 @@ int main(int argc, char **argv)
 
     while (ros::ok())
     {
-        if (isDummy)
+		//harvest data from sensor
+        ROS_INFO("Trying to connect to KMS40 ...");
+        try
         {
-            ROS_INFO_ONCE("DummyMode is active, publishing static test values ...");
+            // set up connection to kms
+            tcp::iostream s(ip, port);
+            if (!s)
+            {
+                ROS_WARN("Connection failed, retry in 5 seconds...");
+                ros::Duration(1, 0).sleep();
+                continue;
+            }
+            ROS_INFO("Connection established");
 
+            std::string inputLine;
+
+            // Set kms in publishing mode
+            ROS_INFO("Starting data acquisition");
+            s << "L1()" << std::endl;
+
+            std::getline(s, inputLine);
+            if (boost::algorithm::lexicographical_compare(inputLine, "L1"))
+            {
+                ROS_WARN("Data acquisition mode was not replied by KMS! Trying to reconnect.");
+                continue;
+            }
+
+            // Get ready for harvesting data
             geometry_msgs::WrenchStamped msg;
             while(ros::ok())
             {
+                std::getline(s, inputLine);
                 msg.header.stamp = ros::Time::now();
+
+                // if data harvest fails continue to loop without publishing
+                if (!transformKMS2WrenchMsg(inputLine.c_str(), msg))
+                {
+                    continue;
+                }
+
                 msg.header.frame_id = parentFrame;
 
-                msg.wrench.force.x = dummyValues[0];
-                msg.wrench.force.y = dummyValues[1];
-                msg.wrench.force.z = dummyValues[2];
-                msg.wrench.torque.x = dummyValues[3];
-                msg.wrench.torque.y = dummyValues[4];
-                msg.wrench.torque.z = dummyValues[5];
-
-                //tfBroadcaster.sendTransform(tf::StampedTransform(transform, ros::Time::now(), parentFrame, "kms40"));
                 wrench_pub.publish(msg);
 
                 ros::spinOnce();
                 loop_rate.sleep();
             }
+
+            // Tearing down data acquisition
+            s << "L0()" << std::endl;
+            ROS_INFO("Command for shutting down KMS40 has been send.");
         }
-        else //harvest data from sensor
+        catch (std::exception& e)
         {
-            ROS_INFO("Trying to connect to KMS40 ...");
-            try
-            {
-                // set up connection to kms
-                tcp::iostream s(ip, port);
-                if (!s)
-                {
-                    ROS_WARN("Connection failed, retry in 5 seconds...");
-                    ros::Duration(1, 0).sleep();
-                    continue;
-                }
-                ROS_INFO("Connection established");
-
-                std::string inputLine;
-
-                // Set kms in publishing mode
-                ROS_INFO("Starting data acquisition");
-                s << "L1()" << std::endl;
-
-                std::getline(s, inputLine);
-                if (boost::algorithm::lexicographical_compare(inputLine, "L1"))
-                {
-                    ROS_WARN("Data acquisition mode was not replied by KMS! Trying to reconnect.");
-                    continue;
-                }
-
-                // Get ready for harvesting data
-                geometry_msgs::WrenchStamped msg;
-                while(ros::ok())
-                {
-                    std::getline(s, inputLine);
-                    msg.header.stamp = ros::Time::now();
-
-                    // if data harvest fails continue to loop without publishing
-                    if (!transformKMS2WrenchMsg(inputLine.c_str(), msg))
-                    {
-                        continue;
-                    }
-
-                    msg.header.frame_id = parentFrame;
-
-                    wrench_pub.publish(msg);
-
-                    ros::spinOnce();
-                    loop_rate.sleep();
-                }
-
-                // Tearing down data acquisition
-                s << "L0()" << std::endl;
-                ROS_INFO("Command for shutting down KMS40 has been send.");
-            }
-            catch (std::exception& e)
-            {
-                ROS_ERROR("Exception: %s", e.what());
-            }
+            ROS_ERROR("Exception: %s", e.what());
         }
+        
     }
 
     ros::spinOnce();
