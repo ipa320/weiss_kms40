@@ -51,7 +51,7 @@ find_package(Boost REQUIRED COMPONENTS system iostreams thread)
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES ipa325_kms40
-  CATKIN_DEPENDS geometry_msgs roscpp rospy std_msgs tf visualization_msgs
+  CATKIN_DEPENDS geometry_msgs roscpp std_srvs
   DEPENDS Boost
 )
 
@@ -74,6 +74,7 @@ include_directories(
 
 ## Declare a cpp executable
 add_executable(Kms40Driver src/Kms40Driver.cpp)
+set_target_properties(Kms40Driver PROPERTIES COMPILE_FLAGS "-std=c++11")
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes

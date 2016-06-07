@@ -1,151 +1,229 @@
-#include <iostream>
 #include <string>
 #include <boost/asio.hpp>
-#include <boost/algorithm/string.hpp>
 
-#include "ros/ros.h"
-#include <tf/transform_broadcaster.h>
+#include <functional>
+#include <future>
+#include <mutex>
+#include <queue>
+
+#include <ros/ros.h>
 #include <geometry_msgs/WrenchStamped.h>
+#include <std_srvs/SetBool.h>
 
 using boost::asio::ip::tcp;
 
-static bool transformKMS2WrenchMsg(const char* i_line, geometry_msgs::WrenchStamped& o_msg)
-{
-    try
-    {
-        if(boost::algorithm::starts_with(i_line, "F="))
-        {
-            //TODO: translate received timestamp in rostime format and include into msg
-            int timestamp;
+/*
+ *
+ *
+ * TODO socket timeouts
+ *
+ *
+ */
 
-            sscanf(i_line, "F={%lf,%lf,%lf,%lf,%lf,%lf},%d",
-                   &o_msg.wrench.force.x,
-                   &o_msg.wrench.force.y,
-                   &o_msg.wrench.force.z,
-                   &o_msg.wrench.torque.x,
-                   &o_msg.wrench.torque.y,
-                   &o_msg.wrench.torque.z,
-                   &timestamp);
+class Command {
+public:
+    virtual void run(tcp::iostream& connection) = 0;
+};
 
-            o_msg.header.stamp = ros::Time::now();
-            o_msg.header.frame_id = "/kms40";
-        }
-        else
-        {
-            ROS_WARN("Unrecognizable token: %s", i_line);
+class Tare : public Command {
+public:
+    // This captures the final result of the command (tared or untared)
+    std::future<bool> result;
+    // Construct a command for tare (true) or untare (false)
+    Tare(bool apply_tare) : apply_tare_{apply_tare} {
+        result = promise_.get_future();
+    }
+    // Communicate and signal state change
+    void run(tcp::iostream& connection) {
+        // We send TARE(1) or TARE(0)
+        connection << "TARE(" << apply_tare_ << ")" << std::endl;
+        std::string response;
+        std::getline(connection, response);
+        std::stringstream expected_response;
+        // We expect TARE=1 or TARE=0
+        expected_response << "TARE=" << apply_tare_;
+        // Time to wake up the caller waiting for the result
+        if(response.compare(expected_response.str()) == 0) {
+            // Set the value
+            promise_.set_value(apply_tare_);
+        } else {
+            // Or set an exception that will be thrown on calling result.get()
+            promise_.set_exception(std::make_exception_ptr(std::runtime_error("Unexpected response:\n"+response)));
         }
     }
-    catch (std::exception& e)
-    {
-        ROS_WARN("Error (%s) while parsing: %s", e.what(), i_line);
-        return false;
+private:
+    bool apply_tare_;
+    std::promise<bool> promise_;
+};
+
+bool tare_callback(std::mutex* command_access, std::queue<std::shared_ptr<Command>>* command_queue, std_srvs::SetBool::Request& request, std_srvs::SetBool::Response& response) {
+    command_access->lock();
+    auto tare_command = std::shared_ptr<Tare>{new Tare(request.data)};
+    command_queue->push(tare_command);
+    command_access->unlock();
+    tare_command->result.wait();
+    try {
+        bool is_tared = tare_command->result.get();
+        response.success = (is_tared == request.data);
+    } catch(std::runtime_error e) {
+        response.success = false;
+        response.message = e.what();
+        ROS_ERROR("tare: %s", e.what());
     }
 
     return true;
 }
 
+// Continuous data stream
+class DataStream {
+public:
+    struct Measurements {
+        std::array<double, 6> wrench;
+        unsigned long timestamp;
 
-int main(int argc, char **argv)
-{
+        Measurements(std::string msg) {
+            auto scanned = sscanf(msg.c_str(),
+                    "F={%lf,%lf,%lf,%lf,%lf,%lf},%lu",
+                     &wrench.at(0), &wrench.at(1), &wrench.at(2),
+                     &wrench.at(3), &wrench.at(4), &wrench.at(5),
+                     &timestamp);
+            if(scanned != 7) {
+                throw std::runtime_error("Could not parse message:\n"+msg);
+            }
+        }
+    };
 
-    ros::init(argc, argv, "kms40");
-
-    std::string ip, port, topic;
-    bool isDummy;
-    double dummyValues[6] = {0};
-
-    std::string parentFrame;
-
-    if( !ros::param::get("~IP_address", ip) )
-    {
-        ROS_WARN("Cannot find IP_address @ paramServer, using default (192.168.1.30)");
-        ip = "192.168.1.30";
+    static void start(tcp::iostream& connection) {
+        connection << "L1()" << std::endl;
+        std::string response;
+        std::getline(connection, response);
+        assert(response.compare("L1") == 0);
     }
 
-    if( !ros::param::get("~port", port) )
-    {
-        ROS_WARN("Cannot find port @ paramServer, using default (1000)");
-        port = "1000";
+    static void stop(tcp::iostream& connection) {
+        connection << "L0()" << std::endl;
+        std::string response;
+        // Consume measurements already on the way
+        // until the constructor fails.
+        while(true) {
+            std::getline(connection, response);
+            try {
+                Measurements{response};
+            }
+            catch(std::runtime_error e) {
+                break;
+            }
+        }
+        assert(response.compare("L0") == 0);
     }
 
-
-    if( !ros::param::get("~parentFrame", parentFrame) )
-    {
-        ROS_WARN("Cannot find parentframe @ parameterServer, using default (world)");
-        parentFrame = "world";
+    static Measurements update(tcp::iostream& connection) {
+        std::string message;
+        std::getline(connection, message);
+        return Measurements(message);
     }
-    
-    if( !ros::param::get("~topic", topic) )
-    {
-        ROS_WARN("Cannot find topic @ parameterServer, using default (/kms40)");
-        topic = "kms40";
-    }
+};
 
+void worker(std::mutex* command_access, std::queue<std::shared_ptr<Command>>* command_queue, std::string host, int port, std::string frame) {
     ros::NodeHandle n;
-    ros::Publisher wrench_pub = n.advertise<geometry_msgs::WrenchStamped>(topic, 1000);
-    ros::Rate loop_rate(550); //500Hz + epsilon (ros::sleep may not be too precise)
+    ros::Publisher pub = n.advertise<geometry_msgs::WrenchStamped>("wrench", 1);
+    geometry_msgs::WrenchStamped msg;
+    msg.header.frame_id = frame;
 
     while (ros::ok())
     {
-		//harvest data from sensor
         ROS_INFO("Trying to connect to KMS40 ...");
         try
         {
             // set up connection to kms
-            tcp::iostream s(ip, port);
+            tcp::iostream s(host, std::to_string(port));
             if (!s)
             {
                 ROS_WARN("Connection failed, retry in 5 seconds...");
                 ros::Duration(1, 0).sleep();
                 continue;
             }
-            ROS_INFO("Connection established");
+            ROS_INFO("Connection established. Starting data acquisition.");
+            DataStream stream;
+            stream.start(s);
 
-            std::string inputLine;
-
-            // Set kms in publishing mode
-            ROS_INFO("Starting data acquisition");
-            s << "L1()" << std::endl;
-
-            std::getline(s, inputLine);
-            if (boost::algorithm::lexicographical_compare(inputLine, "L1"))
-            {
-                ROS_WARN("Data acquisition mode was not replied by KMS! Trying to reconnect.");
-                continue;
-            }
-
-            // Get ready for harvesting data
-            geometry_msgs::WrenchStamped msg;
             while(ros::ok())
             {
-                std::getline(s, inputLine);
-                msg.header.stamp = ros::Time::now();
-
-                // if data harvest fails continue to loop without publishing
-                if (!transformKMS2WrenchMsg(inputLine.c_str(), msg))
-                {
-                    continue;
+                // Check for commands
+                command_access->lock();
+                if(!command_queue->empty()) {
+                    stream.stop(s);
+                    // Process commands
+                    while(!command_queue->empty()) {
+                        command_queue->front()->run(s);
+                        command_queue->pop();
+                    }
+                    stream.start(s);
                 }
+                command_access->unlock();
 
-                msg.header.frame_id = parentFrame;
-
-                wrench_pub.publish(msg);
-
-                ros::spinOnce();
-                loop_rate.sleep();
+                auto m = stream.update(s);
+                // TODO? use sensor timestamps
+                // Only if NTP on sensor works
+                msg.header.stamp = ros::Time::now();
+                msg.wrench.force.x = m.wrench[0];
+                msg.wrench.force.y = m.wrench[1];
+                msg.wrench.force.z = m.wrench[2];
+                msg.wrench.torque.x = m.wrench[3];
+                msg.wrench.torque.y = m.wrench[4];
+                msg.wrench.torque.z = m.wrench[5];
+                pub.publish(msg);
             }
 
-            // Tearing down data acquisition
-            s << "L0()" << std::endl;
-            ROS_INFO("Command for shutting down KMS40 has been send.");
+            stream.stop(s);
         }
         catch (std::exception& e)
         {
             ROS_ERROR("Exception: %s", e.what());
         }
-        
+
+    }
+}
+
+int main(int argc, char **argv)
+{
+    std::mutex command_access;
+    std::queue<std::shared_ptr<Command>> command_queue;
+
+    ros::init(argc, argv, "kms40");
+    ros::NodeHandle private_nh("~");
+    ros::ServiceServer service = private_nh.advertiseService<std_srvs::SetBool::Request, std_srvs::SetBool::Response>(
+                "tare", std::bind(tare_callback, &command_access, &command_queue, std::placeholders::_1, std::placeholders::_2));
+
+    // Get parameters
+    std::string host, frame;
+    int port;
+
+    if( !private_nh.getParam("host", host) )
+    {
+        ROS_ERROR("Parameter ~host not set.");
+        return -1;
     }
 
-    ros::spinOnce();
+    if( !private_nh.getParam("port", port) )
+    {
+        ROS_ERROR("Parameter ~port not set.");
+        return -1;
+    }
+
+    if( !private_nh.getParam("frame", frame) )
+    {
+        ROS_INFO("Parameter ~frame not set. Using default (kms40)");
+        frame = "kms40";
+    }
+
+    std::thread worker_thread(worker, &command_access, &command_queue, host, port, frame);
+
+    ros::AsyncSpinner spinner(4); // Use 4 threads
+    spinner.start();
+    ros::waitForShutdown();
+
+    worker_thread.join();
+
     return 0;
 }
