@@ -1,0 +1,20 @@
+<library path="src">
+  <class name="kms40_emulator_plugin" type="weiss_kms40_emulator.weiss_kms40_emulator.kms40_emulator_plugin" base_class_type="rqt_gui_py::Plugin">
+    <description>
+      Simulates a force-sensor publishing the relevant topic.
+    </description>
+    <qtgui>
+      <!-- optional grouping...
+      <group>
+        <label>Group</label>
+      </group>
+      <group>
+        <label>Subgroup</label>
+      </group>
+      -->
+      <label>force_sensor_emulator</label>
+      <icon type="theme">system-help</icon>
+      <statustip>Simulates a force-sensor publishing the relevant topic.</statustip>
+    </qtgui>
+  </class>
+</library>

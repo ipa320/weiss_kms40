@@ -3,9 +3,7 @@ import rospy
 
 from qt_gui.plugin import Plugin
 from python_qt_binding import loadUi
-from python_qt_binding.QtGui import QWidget
-
-from PyQt4 import QtGui, QtCore
+from python_qt_binding.QtWidgets import QWidget
 
 from geometry_msgs.msg import Wrench, WrenchStamped
 
@@ -17,8 +15,8 @@ class PublisherThread(threading.Thread):
     _isEnd = False
     _wrench = Wrench()
     _rate = rospy.Rate(500) # 500hz
-    _topic = "/kms40"
-    _frameId = "/kms40Frame"
+    _topic = "wrench"
+    _frameId = "force_frame"
 
     def __init__(self): 
         threading.Thread.__init__(self) 
@@ -26,7 +24,7 @@ class PublisherThread(threading.Thread):
     def run(self):
         while not self._isEnd:
             if self._isRunning:
-                self.pub = rospy.Publisher(self._topic, WrenchStamped)
+                self.pub = rospy.Publisher(self._topic, WrenchStamped, queue_size=10)
                 while self._isRunning:
                     msg = WrenchStamped()
                     msg.header.stamp = rospy.Time.now()
@@ -123,7 +121,7 @@ class kms40_emulator_plugin(Plugin):
         self._widget = QWidget()
         # Get path to UI file which is a sibling of this file
         # in this example the .ui and .py file are in the same folder
-        ui_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'ipa325_kms40_emulator.ui')
+        ui_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'weiss_kms40_emulator.ui')
         # Extend the widget with all attributes and children from UI file
         loadUi(ui_file, self._widget)
         # Give QObjects reasonable names
@@ -133,24 +131,24 @@ class kms40_emulator_plugin(Plugin):
         self._widget.pushButton_run.clicked[bool].connect(self._handle_run_clicked)
         self._widget.pushButton_stop.clicked[bool].connect(self._handle_stop_clicked)
 
-        self.connect(self._widget.spinBox_rate, QtCore.SIGNAL("valueChanged(int)"), self._handle_rate_changed)
+        # self.connect(self._widget.spinBox_rate, QtCore.SIGNAL("valueChanged(int)"), self._handle_rate_changed)
 
-        self.connect(self._widget.doubleSpinBox_forceX, QtCore.SIGNAL("valueChanged(double)"), self._handle_forceX_changed)
-        self.connect(self._widget.doubleSpinBox_forceY, QtCore.SIGNAL("valueChanged(double)"), self._handle_forceY_changed)
-        self.connect(self._widget.doubleSpinBox_forceZ, QtCore.SIGNAL("valueChanged(double)"), self._handle_forceZ_changed)
-        self.connect(self._widget.doubleSpinBox_forceA, QtCore.SIGNAL("valueChanged(double)"), self._handle_forceA_changed)
-        self.connect(self._widget.doubleSpinBox_forceB, QtCore.SIGNAL("valueChanged(double)"), self._handle_forceB_changed)
-        self.connect(self._widget.doubleSpinBox_forceC, QtCore.SIGNAL("valueChanged(double)"), self._handle_forceC_changed)
+        # self.connect(self._widget.doubleSpinBox_forceX, QtCore.SIGNAL("valueChanged(double)"), self._handle_forceX_changed)
+        # self.connect(self._widget.doubleSpinBox_forceY, QtCore.SIGNAL("valueChanged(double)"), self._handle_forceY_changed)
+        # self.connect(self._widget.doubleSpinBox_forceZ, QtCore.SIGNAL("valueChanged(double)"), self._handle_forceZ_changed)
+        # self.connect(self._widget.doubleSpinBox_forceA, QtCore.SIGNAL("valueChanged(double)"), self._handle_forceA_changed)
+        # self.connect(self._widget.doubleSpinBox_forceB, QtCore.SIGNAL("valueChanged(double)"), self._handle_forceB_changed)
+        # self.connect(self._widget.doubleSpinBox_forceC, QtCore.SIGNAL("valueChanged(double)"), self._handle_forceC_changed)
 
-        self.connect(self._widget.horizontalSlider_forceX, QtCore.SIGNAL("valueChanged(int)"), self._handle_sliderX_changed)
-        self.connect(self._widget.horizontalSlider_forceY, QtCore.SIGNAL("valueChanged(int)"), self._handle_sliderY_changed)
-        self.connect(self._widget.horizontalSlider_forceZ, QtCore.SIGNAL("valueChanged(int)"), self._handle_sliderZ_changed)
-        self.connect(self._widget.horizontalSlider_forceA, QtCore.SIGNAL("valueChanged(int)"), self._handle_sliderA_changed)
-        self.connect(self._widget.horizontalSlider_forceB, QtCore.SIGNAL("valueChanged(int)"), self._handle_sliderB_changed)
-        self.connect(self._widget.horizontalSlider_forceC, QtCore.SIGNAL("valueChanged(int)"), self._handle_sliderC_changed)
+        # self.connect(self._widget.horizontalSlider_forceX, QtCore.SIGNAL("valueChanged(int)"), self._handle_sliderX_changed)
+        # self.connect(self._widget.horizontalSlider_forceY, QtCore.SIGNAL("valueChanged(int)"), self._handle_sliderY_changed)
+        # self.connect(self._widget.horizontalSlider_forceZ, QtCore.SIGNAL("valueChanged(int)"), self._handle_sliderZ_changed)
+        # self.connect(self._widget.horizontalSlider_forceA, QtCore.SIGNAL("valueChanged(int)"), self._handle_sliderA_changed)
+        # self.connect(self._widget.horizontalSlider_forceB, QtCore.SIGNAL("valueChanged(int)"), self._handle_sliderB_changed)
+        # self.connect(self._widget.horizontalSlider_forceC, QtCore.SIGNAL("valueChanged(int)"), self._handle_sliderC_changed)
 
-        self.connect(self._widget.lineEdit_topic, QtCore.SIGNAL("textChanged (QString)"), self._handle_topic_changed)
-        self.connect(self._widget.lineEdit_frameId, QtCore.SIGNAL("textChanged (QString)"), self._handle_frameId_changed)
+        # self.connect(self._widget.lineEdit_topic, QtCore.SIGNAL("textChanged (QString)"), self._handle_topic_changed)
+        # self.connect(self._widget.lineEdit_frameId, QtCore.SIGNAL("textChanged (QString)"), self._handle_frameId_changed)
 
         # Show _widget.windowTitle on left-top of each plugin (when 
         # it's set in _widget). This is useful when you open multiple 

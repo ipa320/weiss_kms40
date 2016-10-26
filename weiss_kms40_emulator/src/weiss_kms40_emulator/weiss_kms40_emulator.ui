@@ -45,7 +45,7 @@
                </sizepolicy>
               </property>
               <property name="text">
-               <string>/kms40</string>
+               <string>wrench</string>
               </property>
              </widget>
             </item>
@@ -65,7 +65,7 @@
                </sizepolicy>
               </property>
               <property name="text">
-               <string>/kms40Frame</string>
+               <string>force_frame</string>
               </property>
              </widget>
             </item>
