@@ -131,24 +131,24 @@ class kms40_emulator_plugin(Plugin):
         self._widget.pushButton_run.clicked[bool].connect(self._handle_run_clicked)
         self._widget.pushButton_stop.clicked[bool].connect(self._handle_stop_clicked)
 
-        # self.connect(self._widget.spinBox_rate, QtCore.SIGNAL("valueChanged(int)"), self._handle_rate_changed)
+        self._widget.spinBox_rate.valueChanged.connect(self._handle_rate_changed)
 
-        # self.connect(self._widget.doubleSpinBox_forceX, QtCore.SIGNAL("valueChanged(double)"), self._handle_forceX_changed)
-        # self.connect(self._widget.doubleSpinBox_forceY, QtCore.SIGNAL("valueChanged(double)"), self._handle_forceY_changed)
-        # self.connect(self._widget.doubleSpinBox_forceZ, QtCore.SIGNAL("valueChanged(double)"), self._handle_forceZ_changed)
-        # self.connect(self._widget.doubleSpinBox_forceA, QtCore.SIGNAL("valueChanged(double)"), self._handle_forceA_changed)
-        # self.connect(self._widget.doubleSpinBox_forceB, QtCore.SIGNAL("valueChanged(double)"), self._handle_forceB_changed)
-        # self.connect(self._widget.doubleSpinBox_forceC, QtCore.SIGNAL("valueChanged(double)"), self._handle_forceC_changed)
+        self._widget.doubleSpinBox_forceX.valueChanged.connect(self._handle_forceX_changed)
+        self._widget.doubleSpinBox_forceY.valueChanged.connect(self._handle_forceY_changed)
+        self._widget.doubleSpinBox_forceZ.valueChanged.connect(self._handle_forceZ_changed)
+        self._widget.doubleSpinBox_forceA.valueChanged.connect(self._handle_forceA_changed)
+        self._widget.doubleSpinBox_forceB.valueChanged.connect(self._handle_forceB_changed)
+        self._widget.doubleSpinBox_forceC.valueChanged.connect(self._handle_forceC_changed)
 
-        # self.connect(self._widget.horizontalSlider_forceX, QtCore.SIGNAL("valueChanged(int)"), self._handle_sliderX_changed)
-        # self.connect(self._widget.horizontalSlider_forceY, QtCore.SIGNAL("valueChanged(int)"), self._handle_sliderY_changed)
-        # self.connect(self._widget.horizontalSlider_forceZ, QtCore.SIGNAL("valueChanged(int)"), self._handle_sliderZ_changed)
-        # self.connect(self._widget.horizontalSlider_forceA, QtCore.SIGNAL("valueChanged(int)"), self._handle_sliderA_changed)
-        # self.connect(self._widget.horizontalSlider_forceB, QtCore.SIGNAL("valueChanged(int)"), self._handle_sliderB_changed)
-        # self.connect(self._widget.horizontalSlider_forceC, QtCore.SIGNAL("valueChanged(int)"), self._handle_sliderC_changed)
+        self._widget.horizontalSlider_forceX.valueChanged.connect(self._handle_sliderX_changed)
+        self._widget.horizontalSlider_forceY.valueChanged.connect(self._handle_sliderY_changed)
+        self._widget.horizontalSlider_forceZ.valueChanged.connect(self._handle_sliderZ_changed)
+        self._widget.horizontalSlider_forceA.valueChanged.connect(self._handle_sliderA_changed)
+        self._widget.horizontalSlider_forceB.valueChanged.connect(self._handle_sliderB_changed)
+        self._widget.horizontalSlider_forceC.valueChanged.connect(self._handle_sliderC_changed)
 
-        # self.connect(self._widget.lineEdit_topic, QtCore.SIGNAL("textChanged (QString)"), self._handle_topic_changed)
-        # self.connect(self._widget.lineEdit_frameId, QtCore.SIGNAL("textChanged (QString)"), self._handle_frameId_changed)
+        self._widget.lineEdit_topic.editingFinished.connect(self._handle_topic_changed)
+        self._widget.lineEdit_frameId.textChanged.connect(self._handle_frameId_changed)
 
         # Show _widget.windowTitle on left-top of each plugin (when 
         # it's set in _widget). This is useful when you open multiple 
@@ -198,79 +198,97 @@ class kms40_emulator_plugin(Plugin):
         self.t.stop()
 
 
-    def _handle_rate_changed(self, val):
+    def _handle_rate_changed(self):
+        val = self._widget.spinBox_rate.value()
         #print "handle_rate_changed", int(val)
         self.t.setRate(val)
 
     #spinBoxes
-    def _handle_forceX_changed(self, val):
+    def _handle_forceX_changed(self):
+        val = self._widget.doubleSpinBox_forceX.value()
         #print "_handle_forceX_changed", val
         self.t.setWrenchFX(val)
         self.updateWidgets()
 
-    def _handle_forceY_changed(self, val):
+    def _handle_forceY_changed(self):
+        val = self._widget.doubleSpinBox_forceY.value()
         #print "_handle_forceY_changed", val
         self.t.setWrenchFY(val)
         self.updateWidgets()
 
-    def _handle_forceZ_changed(self, val):
+    def _handle_forceZ_changed(self):
+        val = self._widget.doubleSpinBox_forceZ.value()
         #print "_handle_forceZ_changed", val
         self.t.setWrenchFZ(val)
         self.updateWidgets()
 
-    def _handle_forceA_changed(self, val):
+    def _handle_forceA_changed(self):
+        val = self._widget.doubleSpinBox_forceA.value()
         #print "_handle_forceA_changed", val
         self.t.setWrenchTZ(val)
         self.updateWidgets()
 
-    def _handle_forceB_changed(self, val):
+    def _handle_forceB_changed(self):
+        val = self._widget.doubleSpinBox_forceB.value()
         #print "_handle_forceB_changed", val
         self.t.setWrenchTY(val)
         self.updateWidgets()
 
-    def _handle_forceC_changed(self, val):
+    def _handle_forceC_changed(self):
+        val = self._widget.doubleSpinBox_forceC.value()
         #print "_handle_forceC_changed", val
         self.t.setWrenchTX(val)
         self.updateWidgets()
 
     # sliders
-    def _handle_sliderX_changed(self, val):
+    def _handle_sliderX_changed(self):
+        val = self._widget.horizontalSlider_forceX.value()
         #print "_handle_sliderX_changed", val
         self.t.setWrenchFX(val)
         self.updateWidgets()
 
-    def _handle_sliderY_changed(self, val):
+    def _handle_sliderY_changed(self):
+        val = self._widget.horizontalSlider_forceY.value()
         #print "_handle_sliderY_changed", val
         self.t.setWrenchFY(val)
         self.updateWidgets()
 
-    def _handle_sliderZ_changed(self, val):
+    def _handle_sliderZ_changed(self):
+        val = self._widget.horizontalSlider_forceZ.value()
         #print "_handle_sliderZ_changed", val
         self.t.setWrenchFZ(val)
         self.updateWidgets()
 
-    def _handle_sliderA_changed(self, val):
+    def _handle_sliderA_changed(self):
+        val = self._widget.horizontalSlider_forceA.value()
         #print "_handle_sliderA_changed", val
         self.t.setWrenchTZ(val)
         self.updateWidgets()
 
-    def _handle_sliderB_changed(self, val):
+    def _handle_sliderB_changed(self):
+        val = self._widget.horizontalSlider_forceB.value()
         #print "_handle_sliderB_changed", val
         self.t.setWrenchTY(val)
         self.updateWidgets()
 
-    def _handle_sliderC_changed(self, val):
+    def _handle_sliderC_changed(self):
+        val = self._widget.horizontalSlider_forceC.value()
         #print "_handle_sliderC_changed", val
         self.t.setWrenchTX(val)
         self.updateWidgets()
 
-    def _handle_frameId_changed(self, val):
+    def _handle_frameId_changed(self):
+        val = self._widget.lineEdit_frameId.text()
         #print "_handle_topic_changed", val#self._widget.lineEdit_topic.toPlainText()
         self.t.setFrameId(val)
 
-    def _handle_topic_changed(self, val):
+    def _handle_topic_changed(self):
+        val = self._widget.lineEdit_topic.text()
         #print "_handle_topic_changed", val#self._widget.lineEdit_topic.toPlainText()
         self.t.setTopic(val)
+        self.t.stop()
+        rospy.sleep(0.1)
+        self.t.restart()
 
     def updateWidgets(self):
         wrench = self.t.getWrench()
